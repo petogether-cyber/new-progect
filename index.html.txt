@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תכנון וביצוע - חוויית העצמה קבוצתית</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --sand-color: #f59e0b;
+            --glass-color: rgba(255, 255, 255, 0.05);
+            --deep-blue: #0a192f; /* כחול כהה מאוד */
+            --accent-blue: #1e3a8a;
+        }
+
+        body {
+            background-color: var(--deep-blue);
+            background-image: radial-gradient(circle at top right, #112240 0%, #0a192f 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* שעון חול */
+        .hourglass-wrapper {
+            position: relative;
+            width: 140px;
+            height: 240px;
+        }
+
+        .glass {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            background: var(--glass-color);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .top-glass {
+            top: 0;
+            border-radius: 50% 50% 10% 10% / 100% 100% 20% 20%;
+            clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+        }
+
+        .bottom-glass {
+            bottom: 0;
+            border-radius: 10% 10% 50% 50% / 20% 20% 100% 100%;
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+        }
+
+        .sand-top {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to bottom, #fbbf24, #d97706);
+            transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sand-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #fbbf24, #d97706);
+            transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sand-stream {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 50%;
+            background-color: var(--sand-color);
+            transform: translateX(-50%);
+            opacity: 0.15;
+            z-index: 10;
+        }
+
+        .sand-stream.active {
+            opacity: 0.9;
+            width: 4px;
+            animation: flow-active 0.2s infinite;
+        }
+
+        @keyframes flow-active {
+            0% { transform: translateX(-50%) scaleX(1); }
+            50% { transform: translateX(-50%) scaleX(1.5); }
+            100% { transform: translateX(-50%) scaleX(1); }
+        }
+
+        /* שלבים */
+        .milestone-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s ease;
+        }
+
+        .milestone-item.overdue {
+            border: 1px solid #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .completed.milestone-item {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+        }
+
+        /* תעודת סיום */
+        #certificate {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 650px;
+            background: #ffffff;
+            color: #0a192f;
+            padding: 4rem 3rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            border: 12px double #d97706;
+            z-index: 200;
+            box-shadow: 0 0 150px rgba(0,0,0,0.9);
+        }
+
+        #feedback-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 1.25rem 2.5rem;
+            border-radius: 1.25rem;
+            background: #d97706;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 300;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+
+        #feedback-toast.show { transform: translateX(-50%) translateY(0); }
+
+        input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            width: 100%;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #fbbf24;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            color: #0a192f;
+            font-weight: 900;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            transition: all 0.3s;
+            font-size: 1.3rem;
+        }
+
+        .btn-primary:hover { transform: scale(1.03); filter: brightness(1.1); box-shadow: 0 0 30px rgba(217, 119, 6, 0.3); }
+        
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="feedback-toast">כל הכבוד על הנחישות וההתמדה! אני גאה בכם</div>
+
+    <!-- תעודת סיום -->
+    <div id="certificate">
+        <div class="text-7xl mb-6">🏆</div>
+        <h2 class="text-5xl font-black mb-6">תעודת הערכה</h2>
+        <p class="text-2xl mb-6">מוענקת לכם על סיום מוצלח של הפרויקט:</p>
+        <h3 id="certProjectName" class="text-4xl font-bold text-amber-600 mb-10"></h3>
+        <p class="text-2xl italic font-serif text-slate-700">"כל הכבוד על הנחישות וההתמדה! אני גאה בכם"</p>
+        <div class="mt-12 pt-8 border-t border-slate-200">
+            <button onclick="location.reload()" class="bg-slate-900 text-white px-10 py-3 rounded-full font-bold text-xl hover:bg-black transition-colors">התחילו פרויקט חדש</button>
+        </div>
+    </div>
+
+    <!-- מסך פתיחה -->
+    <div id="setupScreen" class="w-full max-w-3xl px-6 py-8 block">
+        <div class="main-card">
+            <h1 class="text-5xl font-black mb-4 text-amber-400">תכנון וביצוע ✨</h1>
+            <p class="text-2xl text-blue-200 mb-10">הגדירו יעדים, עמדו בזמנים וכבשו את הפסגה.</p>
+            
+            <div class="space-y-10">
+                <div>
+                    <label class="block text-xl font-bold text-white mb-3">שם הפרויקט שלכם</label>
+                    <input type="text" id="projectNameInput" placeholder="מה המשימה הגדולה שלכם?">
+                </div>
+                
+                <div id="stepsContainer" class="space-y-5">
+                    <label class="block text-xl font-bold text-white">שלבי הביצוע ותאריכי יעד</label>
+                    <div class="step-row flex flex-col md:flex-row gap-4">
+                        <input type="text" class="step-name flex-1" placeholder="שם השלב">
+                        <input type="date" class="step-due md:w-64">
+                    </div>
+                </div>
+                
+                <button onclick="addStepRow()" class="text-amber-400 text-xl font-bold hover:text-amber-300 transition-colors underline-offset-8 underline">+ הוסיפו שלב נוסף</button>
+
+                <button onclick="startProject()" class="btn-primary w-full mt-10 shadow-2xl">צאו לדרך והצליחו!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- מסך מעקב -->
+    <div id="trackingScreen" class="w-full max-w-6xl px-4 py-8 hidden">
+        <div class="flex flex-col items-center">
+            <h1 id="displayProjectName" class="text-5xl font-black mb-14 text-center text-white drop-shadow-2xl tracking-tight"></h1>
+            
+            <div class="main-card flex flex-col lg:flex-row gap-12 w-full">
+                <!-- רשימת שלבים -->
+                <div class="flex-1 space-y-6" id="milestonesList"></div>
+
+                <!-- שעון חול -->
+                <div class="flex flex-col items-center gap-10 lg:border-r lg:border-white/10 lg:pr-14">
+                    <div class="hourglass-wrapper">
+                        <div class="glass top-glass">
+                            <div id="sandTop" class="sand-top" style="height: 100%;"></div>
+                        </div>
+                        <div id="sandStream" class="sand-stream"></div>
+                        <div class="glass bottom-glass">
+                            <div id="sandBottom" class="sand-bottom" style="height: 0%;"></div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-md text-blue-300 font-bold uppercase tracking-widest mb-3">התקדמות הפרויקט</p>
+                        <p id="percentLabel" class="text-7xl font-black text-amber-400">0%</p>
+                    </div>
+                    <button onclick="location.reload()" class="text-white/40 hover:text-white text-md underline transition-colors">אפסו והתחילו מחדש</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let projectData = { name: "", steps: [] };
+        let completedCount = 0;
+        
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSandSound(duration = 2000) {
+            try {
+                const noise = audioCtx.createBufferSource();
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 500;
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration/1000);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start();
+            } catch(e) {}
+        }
+
+        function playSuccessSound() {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.4); 
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            } catch(e) {}
+        }
+
+        function addStepRow() {
+            const container = document.getElementById('stepsContainer');
+            const row = document.createElement('div');
+            row.className = 'step-row flex flex-col md:flex-row gap-4 animate-fadeIn';
+            row.innerHTML = `<input type="text" class="step-name flex-1" placeholder="שם השלב"><input type="date" class="step-due md:w-64">`;
+            container.appendChild(row);
+        }
+
+        function startProject() {
+            const name = document.getElementById('projectNameInput').value;
+            if (!name) return alert("אנא הזזינו שם לפרויקט");
+            
+            const stepNames = document.querySelectorAll('.step-name');
+            const stepDues = document.querySelectorAll('.step-due');
+            
+            projectData.steps = [];
+            stepNames.forEach((input, i) => {
+                if (input.value) {
+                    projectData.steps.push({
+                        title: input.value,
+                        due: stepDues[i].value
+                    });
+                }
+            });
+
+            if (projectData.steps.length === 0) return alert("הוסיפו לפחות שלב אחד");
+            projectData.name = name;
+            renderProject();
+        }
+
+        function showFeedback() {
+            const toast = document.getElementById('feedback-toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        function renderProject() {
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('trackingScreen').style.display = 'block';
+            document.getElementById('displayProjectName').innerText = projectData.name;
+
+            const list = document.getElementById('milestonesList');
+            list.innerHTML = '';
+            const colors = ['#f87171', '#fbbf24', '#60a5fa', '#a78bfa', '#34d399', '#f472b6'];
+
+            projectData.steps.forEach((step, index) => {
+                const item = document.createElement('div');
+                const isOverdue = step.due && new Date(step.due) < new Date().setHours(0,0,0,0);
+                item.className = `milestone-item p-7 rounded-3xl flex items-center gap-7 cursor-pointer ${isOverdue ? 'overdue' : ''}`;
+                item.id = `step-${index}`;
+                
+                const displayDate = step.due ? new Date(step.due).toLocaleDateString('he-IL') : 'ללא יעד';
+                
+                item.innerHTML = `
+                    <div class="dot w-16 h-16 rounded-full border-4 flex items-center justify-center font-black text-3xl" style="color: ${colors[index % colors.length]}">
+                        ${index + 1}
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-3xl font-bold text-white mb-1">${step.title}</div>
+                        <div class="text-lg ${isOverdue ? 'text-red-300 font-bold' : 'text-blue-200'}">
+                            ${isOverdue ? '⚠️ עבר הזמן! תזכורת: השלימו את השלב ' : 'יעד לסיום: '} ${displayDate}
+                        </div>
+                    </div>
+                `;
+                item.onclick = () => toggleStep(index);
+                list.appendChild(item);
+            });
+        }
+
+        function toggleStep(index) {
+            if (index === completedCount) {
+                const item = document.getElementById(`step-${index}`);
+                item.classList.add('completed');
+                item.classList.remove('overdue');
+                completedCount++;
+                
+                playSuccessSound();
+                playSandSound(2000);
+                showFeedback();
+                triggerSandFlow();
+
+                if (completedCount === projectData.steps.length) {
+                    setTimeout(showCertificate, 1500);
+                }
+            } else if (index === completedCount - 1) {
+                const item = document.getElementById(`step-${index}`);
+                item.classList.remove('completed');
+                completedCount--;
+                triggerSandFlow();
+            }
+            updateSandUI();
+        }
+
+        function showCertificate() {
+            document.getElementById('certProjectName').innerText = projectData.name;
+            document.getElementById('certificate').style.display = 'block';
+            document.getElementById('trackingScreen').style.opacity = '0.1';
+            document.getElementById('trackingScreen').style.pointerEvents = 'none';
+        }
+
+        function triggerSandFlow() {
+            const stream = document.getElementById('sandStream');
+            stream.classList.add('active');
+            setTimeout(() => stream.classList.remove('active'), 2000);
+        }
+
+        function updateSandUI() {
+            const progress = (completedCount / projectData.steps.length) * 100;
+            document.getElementById('sandTop').style.height = (100 - progress) + '%';
+            document.getElementById('sandBottom').style.height = progress + '%';
+            document.getElementById('percentLabel').innerText = Math.round(progress) + '%';
+        }
+    </script>
+</body>
+</html>
